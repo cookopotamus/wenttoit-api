@@ -1,0 +1,17 @@
+name: Code Quality Check
+
+on:
+  push:
+    branches: '*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Run Lint and Specs
+      run: |
+        rubocop,
+        rspec
