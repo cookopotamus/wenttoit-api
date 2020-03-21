@@ -13,5 +13,6 @@ jobs:
 
     - name: Run Lint and Specs
       run: |
-        rubocop,
+        bundle install
+        rubocop
         rspec
