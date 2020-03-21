@@ -35,12 +35,19 @@ jobs:
         ci_node_index: [0, 1]
 
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
 
     - name: Set Up Ruby 2.7
       uses: actions/setup-ruby@v1
       with:
         ruby-version: 2.7.0
+        
+    - uses: actions/cache@v1
+      with:
+        path: vendor/bundle
+        key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-gems-
           
     # Required to compile pg ruby gem.
     - name: Install PostgreSQL Client
@@ -60,7 +67,7 @@ jobs:
         bundle install --jobs 4 --retry 3
         bin/rails db:setup
         
-    - name: Run Linter and Specs
+    - name: Run Rubocop and Specs
       env:
         DATABASE_URL: postgres://postgres@localhost:${{ job.services.postgres.ports[5432] }}/postgres
         RAILS_ENV: test
