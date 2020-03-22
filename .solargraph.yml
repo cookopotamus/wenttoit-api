@@ -1,0 +1,11 @@
+---
+include:
+  - '**/*.rb'
+exclude:
+  - spec/**/*
+  - '.bundle/**/*'
+require: []
+domains: []
+reporters:
+  - rubocop
+require_paths: []

@@ -1,0 +1,82 @@
+env:
+  DATABASE_URL: postgres://postgres@localhost:5432/postgres
+  POSTGRES_DB: postgres
+  POSTGRES_PASSWORD: ''
+  POSTGRES_USER: postgres
+  RAILS_ENV: test
+  RUBY_VERSION: 2.7.0
+
+name: Code Quality Check
+
+on: [push]
+
+jobs:
+  run-rubocop:
+    name: Rubocop
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v1
+
+      - uses: actions/setup-ruby@v1
+        with:
+          ruby-version: ${{ env.RUBY_VERSION }}
+
+      - name: Install Rubocop
+        run: gem install rubocop
+
+      - name: Run Rubocop
+        run: rubocop
+
+  run-rspec:
+    name: RSpec
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:10.8
+        ports: ['5432:5432']
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+
+    strategy:
+      fail-fast: false
+
+    steps:
+      - name: Checkout Project
+        uses: actions/checkout@v2
+
+      - name: Set Up Ruby
+        uses: actions/setup-ruby@v1
+        with:
+          ruby-version: ${{ env.RUBY_VERSION }}
+
+      - name: Cache Project Gems
+        uses: actions/cache@v1
+        with:
+          path: vendor/bundle
+          key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-gems-
+
+      - name: Install PostgreSQL Client
+        run: sudo apt-get install libpq-dev
+
+      - name: Run Bundler
+        run: |
+          gem install bundler
+          bundle config path vendor/bundle
+          bundle install --jobs 4 --retry 3
+
+      - name: Set Up Test Database
+        run: bin/rails db:setup
+
+      - name: Run RSpec
+        run: bundle exec rspec
+
+      - name: Check Code Coverage
+        uses: devmasx/coverage-check-action@v1.1.0
+        with:
+          type: simplecov
+          result_path: spec/zz_coverage/.last_run.json
+          min_coverage: 100
+          token: ${{secrets.GITHUB_TOKEN}}
